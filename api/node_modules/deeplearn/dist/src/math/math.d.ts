@@ -1,0 +1,194 @@
+import { ConvInfo } from './conv_util';
+import { Array1D, Array2D, Array3D, Array4D, DataTypes, NDArray, Scalar } from './ndarray';
+export declare type ScopeResultImmediate = NDArray[] | NDArray | void;
+export declare type ScopeResult = ScopeResultImmediate | Promise<ScopeResultImmediate>;
+export interface LSTMCell {
+    (data: Array2D, c: Array2D, h: Array2D): [Array2D, Array2D];
+}
+export interface SumTypes {
+    float32: 'float32';
+    int32: 'int32';
+    bool: 'int32';
+}
+export declare enum SumTypesMap {
+    float32 = "float32",
+    int32 = "int32",
+    bool = "int32",
+}
+export declare abstract class NDArrayMath {
+    private safeMode;
+    private ndarrayScopes;
+    private activeScope;
+    private ndarraysToKeep;
+    private activeScopeNDArraysToKeep;
+    private debugMode;
+    constructor(safeMode: boolean);
+    scope<T extends ScopeResult>(scopeFn: (keep: <T1 extends NDArray>(ndarray: T1) => T1, track: <T2 extends NDArray>(ndarray: T2) => T2) => T): T;
+    enableDebugMode(): void;
+    startScope(): void;
+    endScope(result: ScopeResultImmediate): void;
+    private isNDArrayDataInList(ndarray, ndarrayList);
+    keep<T extends NDArray>(result: T): T;
+    private checkForNaN(vals, dtype, name);
+    track<G extends keyof DataTypes, T extends NDArray<G>>(result: T): T;
+    dispose(): void;
+    matMul(a: Array2D, b: Array2D, aOrientation?: MatrixOrientation, bOrientation?: MatrixOrientation): Array2D;
+    private executeOp<G, T>(name, f);
+    protected abstract matMulInternal(a: Array2D, b: Array2D, aOrientation: MatrixOrientation, bOrientation: MatrixOrientation): Array2D;
+    vectorTimesMatrix(v: Array1D, matrix: Array2D): Array1D;
+    matrixTimesVector(matrix: Array2D, v: Array1D): Array1D;
+    dotProduct(v1: Array1D, v2: Array1D): Scalar;
+    outerProduct(v1: Array1D, v2: Array1D): Array2D;
+    clone<T extends NDArray>(ndarray: T): T;
+    protected abstract cloneInternal<T extends NDArray>(ndarray: T): T;
+    reshape<T1 extends NDArray, T2 extends NDArray>(ndarray: T1, newShape: number[]): T2;
+    slice1D(input: Array1D, begin: number, size: number): Array1D;
+    protected abstract slice1DInternal(input: Array1D, begin: number, size: number): Array1D;
+    slice2D(input: Array2D, begin: [number, number], size: [number, number]): Array2D;
+    protected abstract slice2DInternal(input: Array2D, begin: [number, number], size: [number, number]): Array2D;
+    slice3D(input: Array3D, begin: [number, number, number], size: [number, number, number]): Array3D;
+    protected abstract slice3DInternal(input: Array3D, begin: [number, number, number], size: [number, number, number]): Array3D;
+    slice4D(input: Array4D, begin: [number, number, number, number], size: [number, number, number, number]): Array4D;
+    protected abstract slice4DInternal(input: Array4D, begin: [number, number, number, number], size: [number, number, number, number]): Array4D;
+    copy2D(source: Array2D, sourceBegin: [number, number], sourceSize: [number, number], dest: Array2D, destBegin: [number, number], destSize: [number, number]): void;
+    protected abstract copy2DInternal(source: Array2D, sourceBegin: [number, number], sourceSize: [number, number], dest: Array2D, destBegin: [number, number], destSize: [number, number]): void;
+    concat1D(a: Array1D, b: Array1D): Array1D;
+    protected abstract concat1DInternal(a: Array1D, b: Array1D): Array1D;
+    concat2D(a: Array2D, b: Array2D, axis: number): Array2D;
+    protected abstract concat2DInternal(a: Array2D, b: Array2D, axis: number): Array2D;
+    concat3D(ndarray1: Array3D, ndarray2: Array3D, axis: number): Array3D;
+    protected abstract concat3DInternal(ndarray1: Array3D, ndarray2: Array3D, axis: number): Array3D;
+    concat4D(ndarray1: Array4D, ndarray2: Array4D, axis: number): Array4D;
+    protected abstract concat4DInternal(ndarray1: Array4D, ndarray2: Array4D, axis: number): Array4D;
+    logSumExp(input: NDArray, axis?: number | number[], keepDims?: boolean): NDArray;
+    protected abstract logSumExpInternal(ndarray: NDArray, axes: number[]): NDArray;
+    sum<T extends keyof DataTypes>(input: NDArray<T>, axis?: number | number[], keepDims?: boolean): NDArray<SumTypes[T]>;
+    protected abstract sumInternal<T extends keyof DataTypes>(ndarray: NDArray<T>, axes: number[]): NDArray<SumTypes[T]>;
+    argMin(input: NDArray, axis?: number): NDArray<'int32'>;
+    protected abstract argMinInternal(ndarray: NDArray, axes: number[]): NDArray<'int32'>;
+    argMax(input: NDArray, axis?: number): NDArray<'int32'>;
+    protected abstract argMaxInternal(ndarray: NDArray, axes: number[]): NDArray<'int32'>;
+    argMaxEquals(x1: NDArray, x2: NDArray): Scalar<'bool'>;
+    equal(x: NDArray, y: NDArray): NDArray<'bool'>;
+    protected abstract equalInternal(x: NDArray, y: NDArray): NDArray<'bool'>;
+    equalStrict<D extends keyof DataTypes, T extends NDArray<D>>(x: T, y: T): NDArray<'bool'>;
+    topK(ndarray: NDArray, k: number): {
+        values: Array1D;
+        indices: Array1D;
+    };
+    protected abstract topKInternal(ndarray: NDArray, k: number): {
+        values: Array1D;
+        indices: Array1D;
+    };
+    min<G extends keyof DataTypes>(input: NDArray<G>, axis?: number | number[], keepDims?: boolean): NDArray<G>;
+    protected abstract minInternal<G extends keyof DataTypes>(input: NDArray<G>, axes: number[]): NDArray<G>;
+    max<G extends keyof DataTypes>(input: NDArray<G>, axis?: number | number[], keepDims?: boolean): NDArray<G>;
+    protected abstract maxInternal<G extends keyof DataTypes>(input: NDArray<G>, axes: number[]): NDArray<G>;
+    softmax<T extends NDArray>(logits: T, dim?: number): T;
+    switchDim<T extends NDArray>(a: T, newDim: number[]): T;
+    transpose<D extends keyof DataTypes, T extends NDArray<D>>(a: T, perm?: number[]): T;
+    protected abstract transposeInternal<D extends keyof DataTypes, T extends NDArray<D>>(a: T, perm: number[]): T;
+    scalarPlusArray<T extends NDArray>(c: Scalar, a: T): T;
+    scalarMinusArray<T extends NDArray>(c: Scalar, a: T): T;
+    arrayMinusScalar<T extends NDArray>(a: T, c: Scalar): T;
+    neg<T extends NDArray>(a: T): T;
+    protected abstract negInternal<T extends NDArray>(a: T): T;
+    add<G extends keyof DataTypes>(a: NDArray<G>, b: NDArray<G>): NDArray<G>;
+    protected abstract addInternal<G extends keyof DataTypes>(a: NDArray<G>, b: NDArray<G>): NDArray<G>;
+    addStrict<D extends keyof DataTypes, T extends NDArray<D>>(a: T, b: T): T;
+    subtract<G extends keyof DataTypes>(a: NDArray<G>, b: NDArray<G>): NDArray<G>;
+    sub<G extends keyof DataTypes>(a: NDArray<G>, b: NDArray<G>): NDArray<G>;
+    protected abstract subtractInternal<G extends keyof DataTypes>(a: NDArray<G>, b: NDArray<G>): NDArray<G>;
+    subStrict<D extends keyof DataTypes, T extends NDArray<D>>(a: T, b: T): T;
+    multiply(a: NDArray, b: NDArray): NDArray;
+    protected abstract multiplyInternal<T extends NDArray>(a: T, b: T): T;
+    elementWiseMul<T extends NDArray>(a: T, b: T): T;
+    multiplyStrict<T extends NDArray>(a: T, b: T): T;
+    divide(a: NDArray, b: NDArray): NDArray;
+    protected abstract divideInternal(a: NDArray, b: NDArray): NDArray;
+    divideStrict<T extends NDArray>(a: T, b: T): T;
+    scalarDividedByArray<T extends NDArray>(c: Scalar, a: T): T;
+    arrayDividedByScalar<T extends NDArray>(a: T, c: Scalar): T;
+    ceil<T extends NDArray>(ndarray: T): T;
+    protected abstract ceilInternal<T extends NDArray>(ndarray: T): T;
+    floor<T extends NDArray>(ndarray: T): T;
+    protected abstract floorInternal<T extends NDArray>(ndarray: T): T;
+    exp<T extends NDArray>(ndarray: T): T;
+    protected abstract expInternal<T extends NDArray>(ndarray: T): T;
+    log<T extends NDArray>(ndarray: T): T;
+    protected abstract logInternal<T extends NDArray>(ndarray: T): T;
+    sqrt<T extends NDArray>(ndarray: T): T;
+    protected abstract sqrtInternal<T extends NDArray>(ndarray: T): T;
+    abs<T extends NDArray>(ndarray: T): T;
+    protected abstract absInternal<T extends NDArray>(ndarray: T): T;
+    clip<T extends NDArray>(ndarray: T, min: number, max: number): T;
+    protected abstract clipInternal<T extends NDArray>(ndarray: T, min: number, max: number): T;
+    relu<T extends NDArray>(ndarray: T): T;
+    protected abstract reluInternal<T extends NDArray>(ndarray: T): T;
+    elu<T extends NDArray>(ndarray: T): T;
+    protected abstract eluInternal<T extends NDArray>(ndarray: T): T;
+    leakyRelu<T extends NDArray>(ndarray: T, alpha?: number): T;
+    protected abstract leakyReluInternal<T extends NDArray>(ndarray: T, alpha: number): T;
+    sigmoid<T extends NDArray>(ndarray: T): T;
+    protected abstract sigmoidInternal<T extends NDArray>(ndarray: T): T;
+    sin<T extends NDArray>(ndarray: T): T;
+    protected abstract sinInternal<T extends NDArray>(ndarray: T): T;
+    cos<T extends NDArray>(ndarray: T): T;
+    protected abstract cosInternal<T extends NDArray>(ndarray: T): T;
+    tan<T extends NDArray>(ndarray: T): T;
+    protected abstract tanInternal<T extends NDArray>(ndarray: T): T;
+    asin<T extends NDArray>(ndarray: T): T;
+    protected abstract asinInternal<T extends NDArray>(ndarray: T): T;
+    acos<T extends NDArray>(ndarray: T): T;
+    protected abstract acosInternal<T extends NDArray>(ndarray: T): T;
+    atan<T extends NDArray>(ndarray: T): T;
+    protected abstract atanInternal<T extends NDArray>(ndarray: T): T;
+    sinh<T extends NDArray>(ndarray: T): T;
+    protected abstract sinhInternal<T extends NDArray>(ndarray: T): T;
+    cosh<T extends NDArray>(ndarray: T): T;
+    protected abstract coshInternal<T extends NDArray>(ndarray: T): T;
+    tanh<T extends NDArray>(ndarray: T): T;
+    protected abstract tanhInternal<T extends NDArray>(ndarray: T): T;
+    step<T extends NDArray>(ndarray: T): T;
+    protected abstract stepInternal<T extends NDArray>(ndarray: T): T;
+    scaledArrayAdd<T extends NDArray>(c1: Scalar, a: T, c2: Scalar, b: T): T;
+    protected abstract scaledArrayAddInternal<T extends NDArray>(c1: Scalar, a: T, c2: Scalar, b: T): T;
+    scalarTimesArray<T extends NDArray>(c: Scalar, a: T): T;
+    elementWiseMulBroadcast(a: Array2D, b: Array2D): Array2D;
+    conv2d(x: Array3D, filter: Array4D, bias: Array1D | null, strides: [number, number] | number, pad: 'valid' | 'same' | number): Array3D;
+    protected abstract conv2dInternal(x: Array3D, filter: Array4D, bias: Array1D | null, convInfo: ConvInfo): Array3D;
+    conv2dBackProp(x: Array3D, dy: Array3D, filter: Array4D, strides: [number, number] | number, pad: 'valid' | 'same' | number): {
+        dx: Array3D;
+        dw: Array4D;
+        db: Array1D;
+    };
+    conv2dDerInput(inShape: [number, number, number], dy: Array3D, filter: Array4D, strides: [number, number] | number, pad: 'valid' | 'same' | number): Array3D;
+    protected abstract conv2dDerInputInternal(dy: Array3D, filter: Array4D, convInfo: ConvInfo): Array3D;
+    conv2dDerBias(dy: Array3D): Array1D;
+    protected abstract conv2dDerBiasInternal(dY: Array3D): Array1D;
+    conv2dDerFilter(x: Array3D, dy: Array3D, filterSize: [number, number, number, number], strides: [number, number] | number, pad: 'valid' | 'same' | number): Array4D;
+    protected abstract conv2dDerFilterInternal(x: Array3D, dy: Array3D, convInfo: ConvInfo): Array4D;
+    conv2dTranspose(x: Array3D, filter: Array4D, outputShape: [number, number, number], strides: [number, number] | number, pad: 'valid' | 'same' | number): Array3D;
+    maxPool(x: Array3D, filterSize: [number, number] | number, strides: [number, number] | number, pad: 'valid' | 'same' | number): Array3D;
+    protected abstract maxPoolInternal(x: Array3D, convInfo: ConvInfo): Array3D;
+    maxPoolBackprop(dy: Array3D, x: Array3D, filterSize: [number, number] | number, strides: [number, number] | number, pad: 'valid' | 'same' | number): Array3D;
+    protected abstract maxPoolBackpropInternal(dy: Array3D, x: Array3D, convInfo: ConvInfo): Array3D;
+    minPool(x: Array3D, filterSize: [number, number] | number, strides: [number, number] | number, pad: 'valid' | 'same' | number): Array3D;
+    protected abstract minPoolInternal(x: Array3D, convInfo: ConvInfo): Array3D;
+    avgPool(x: Array3D, filterSize: [number, number] | number, strides: [number, number] | number, pad: 'valid' | 'same' | number): Array3D;
+    protected abstract avgPoolInternal(x: Array3D, convInfo: ConvInfo): Array3D;
+    resizeBilinear3D(x: Array3D, newShape2D: [number, number], alignCorners?: boolean): Array3D;
+    protected abstract resizeBilinear3DInternal(x: Array3D, newShape2D: [number, number], alignCorners: boolean): Array3D;
+    batchNormalization3D(x: Array3D, mean: Array3D | Array1D, variance: Array3D | Array1D, varianceEpsilon?: number, scale?: Array3D | Array1D, offset?: Array3D | Array1D): Array3D;
+    protected abstract batchNormalization3DInternal(x: Array3D, mean: Array3D | Array1D, variance: Array3D | Array1D, varianceEpsilon: number, scale?: Array3D | Array1D, offset?: Array3D | Array1D): Array3D;
+    multiRNNCell(lstmCells: LSTMCell[], data: Array2D, c: Array2D[], h: Array2D[]): [Array2D[], Array2D[]];
+    basicLSTMCell(forgetBias: Scalar, lstmKernel: Array2D, lstmBias: Array1D, data: Array2D, c: Array2D, h: Array2D): [Array2D, Array2D];
+    multinomial(probabilities: Array1D | Array2D, numSamples: number, seed?: number): Array1D<'int32'> | Array2D<'int32'>;
+    protected abstract multinomialInternal(probabilities: Array2D, numSamples: number, seed: number): Array2D<'int32'>;
+    oneHot(indices: Array1D, depth: number, onValue?: number, offValue?: number): Array2D;
+    protected abstract oneHotInternal(indices: Array1D, depth: number, onValue: number, offValue: number): Array2D;
+}
+export declare enum MatrixOrientation {
+    REGULAR = 0,
+    TRANSPOSED = 1,
+}

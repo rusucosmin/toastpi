@@ -6,12 +6,16 @@ app.get('/', function(req, res) {
 	console.log('Hello World!\n')
 	res.send('Hello World!\n')
 })
+app.get('/test', function(req, res) {
+	runPythonScript('../scripts/test.py')
+})
 
 function runPythonScript(path) {
   console.log('runPythonScript(' + path + ')')
-  python.run(path, function(err) {
+  python.run(path, function(err, msg) {
     if (err) throw err;
     console.log('finished')
+    console.log('received msg: ' + msg)
   })
 }
 
