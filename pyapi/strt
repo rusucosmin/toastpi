@@ -1,0 +1,5 @@
+#!/bin/bash
+
+sudo lsof -i :5000 | awk '{print $2}' | tail -n +2 | xargs -L1 sudo kill -9
+
+sudo python index.py
