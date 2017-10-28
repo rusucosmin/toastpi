@@ -4,7 +4,7 @@ from rgbled import RgbLed
 from subprocess import call
 from temperature import Temperature
 from vibrator import Vibrator
-
+from chart import Chart
 import json
 import os
 import requests
@@ -13,7 +13,7 @@ import time
 import RPi.GPIO as GPIO
 import atexit
 
-RED_LED_CHANNEL = 27 
+RED_LED_CHANNEL = 27
 TEMPERATURE_CHANNEL = 4
 VIBRATION_CHANNEL = 17
 RGB_CHANNELS = [5, 6, 13]
@@ -62,6 +62,7 @@ redLed = RedLed(RED_LED_CHANNEL)
 temperature = Temperature(TEMPERATURE_CHANNEL)
 rgbLed = RgbLed(RGB_CHANNELS[0], RGB_CHANNELS[1], RGB_CHANNELS[2])
 vibrator = Vibrator(onVibrate, VIBRATION_CHANNEL)
+chart = Chart()
 
 @app.route("/")
 def hello():
@@ -125,6 +126,7 @@ def check_temperature_periodically():
   print('check_temperature_periodically started')
   while True:
     act = json.loads(stats())
+    chart.addTemp(act['temperature'])
     print("current temperature: " + str(act["temperature"]))
     print("current humidity: " + str(act["humidity"]))
     if act["temperature"] <= TEMPERATURE_THRESHOLD:
@@ -164,8 +166,12 @@ def save_image():
 #  t.start()
   start_cam()
   print('save_image() ended')
-  return json.dumps({"url": "/" + url}) 
- 
+  return json.dumps({"url": "/" + url})
+
+@app.route("/averages")
+def getAverages():
+    return json.dumps(chart.getAverages())
+
 @app.route("/photos/<path:path>")
 def getPhoto(path):
   print('getPhoto() started')
@@ -174,7 +180,7 @@ def getPhoto(path):
 def waitThread():
     print('waiting thread')
     t.join()
-   
+
 if __name__ == "__main__":
   # starte thread
   t = threading.Thread(target=check_temperature_periodically)
