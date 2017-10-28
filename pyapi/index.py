@@ -126,7 +126,7 @@ def check_temperature_periodically():
   print('check_temperature_periodically started')
   while True:
     act = json.loads(stats())
-    chart.addTemp(float(act['temperature'])
+    chart.addTemp(float(act['temperature']))
     print("current temperature: " + str(act["temperature"]))
     print("current humidity: " + str(act["humidity"]))
     if act["temperature"] <= TEMPERATURE_THRESHOLD:
