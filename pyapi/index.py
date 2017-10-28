@@ -172,6 +172,14 @@ def save_image():
 def getAverages():
     return json.dumps(chart.getAverages())
 
+@app.route("/mock_average")
+def mockAverage():
+    chart.addTemperature(1,23)
+    chart.addTemperature(7,21)
+    chart.addTemperature(13,18)
+    chart.addTemperature(19,26)
+    return getAverages()
+
 @app.route("/photos/<path:path>")
 def getPhoto(path):
   print('getPhoto() started')
