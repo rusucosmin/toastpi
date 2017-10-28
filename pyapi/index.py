@@ -1,10 +1,12 @@
-from flask import Flask, request
+from flask import Flask, request, send_from_directory
 from redled import RedLed
 from rgbled import RgbLed
+from subprocess import call
 from temperature import Temperature
 from vibrator import Vibrator
 
 import json
+import os
 import requests
 import time
 import RPi.GPIO as GPIO
@@ -14,13 +16,13 @@ TEMPERATURE_CHANNEL = 4
 VIBRATION_CHANNEL = 17
 RGB_CHANNELS = [5, 6, 13]
 
+TEMPERATURE_THRESHOLD = 27
 
 #callback for onVibrate
-def startBroadcasting():
-  
 last_callback = 0
 def sendNotif():
-  startBroadcasting()
+  photojson = json.loads(save_image())
+  start_cam()
   print("sendNotif() called")
   url = "https://fcm.googleapis.com/fcm/send"
   headers = {
@@ -30,7 +32,8 @@ def sendNotif():
   payload = json.dumps({
     "to": "/topics/news",
     "data": {
-      "message": "This is a Firebase Cloud Messaging Topic Message!"
+      "message": "This is a Firebase Cloud Messaging Topic Message!",
+      "url": photojson["url"]
 	  }
   })
   response = requests.request("POST", url, data=payload, headers=headers)
@@ -97,6 +100,35 @@ def setRgbLed():
 def stats():
   response = temperature.getStats()
   return json.dumps(response)
+
+def check_temperature_periodically(arg):
+  stats = json.loads(stats())
+  if stats["temperature"] >= TEMPERATURE_THRESHOLD:
+
+
+# webcamera
+
+@app.route("/start_cam")
+def start_cam():
+  os.system("sudo motion && sudo service motion start")
+  return "ok"
+
+@app.route("/end_cam")
+def end_cam():
+  os.system("sudo service motion stop")
+  return "ok"
+
+@app.route("/save_image")
+def save_image():
+  end_cam()
+  url = "photos/" + str(int(time.time())) + ".jpg"
+  os.system("fswebcam -r 640x480 --no-banner " + url)
+  start_cam()
+  return json.dumps({"url": "/" + url}) 
+ 
+@app.route("/photos/<path:path>")
+def getPhoto(path):
+  return send_from_directory("photos", path)
 
 if __name__ == "__main__":
   app.run(host='0.0.0.0')
